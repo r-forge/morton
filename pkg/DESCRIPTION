@@ -1,0 +1,12 @@
+Package: morton
+Type: Package
+Title: Miscellaneous functions in population genetics and phylogenetics
+Version: 1.0
+Date: 2009-11-23
+Author: Andrew Hipp <ahipp@mortonarb.org>
+Maintainer: Who to complain to <yourfault@somewhere.net>
+Description: This project focuses on import, export, and analysis of AFLP and microsatellite data for 
+phylogenetic and population genetic purposes and implementation of population genetic and phylogenetic comparative methods 
+not found in other packages.
+License: GPL
+LazyLoad: yes
