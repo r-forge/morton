@@ -3,7 +3,8 @@ Type: Package
 Title: Miscellaneous functions in population genetics and phylogenetics
 Version: 1.0
 Date: 2009-11-23
-Depends: ape, ncf, vegan
+Depends: corpcor
+Recommends: ape, vegan
 Author: Andrew Hipp <ahipp@mortonarb.org>
 Maintainer: Andrew Hipp <ahipp@mortonarb.org>
 Description: This project focuses on import, export, and analysis of AFLP and microsatellite data for 
