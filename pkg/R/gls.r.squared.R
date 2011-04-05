@@ -1,6 +1,8 @@
-gls.r.squared <- function(x, tr) {
+gls.r.squared <- function(x) {
+# based on Judge et al. 1985, eq. 2.3.16
   e = x$resid
-  V = ifelse(class(tr) == "phylo", vcv.phylo(tr), tr)
+  V <- corMatrix(x$modelStruct$corStruct)
+  # V = vcv.phylo(tr)
   Y = x$resid + x$fitted
   one <- matrix(1, length(Y), 1)
   a <- as.numeric(solve(t(one) %*% solve(V) %*% one) %*% (t(one) %*% solve(V) %*% Y))
