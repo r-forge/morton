@@ -2,9 +2,9 @@ Package: morton
 Type: Package
 Title: Miscellaneous functions in population genetics and phylogenetics
 Version: 1.0
-Date: 2012-11-20
+Date: 2012-12-10
 Depends: corpcor, phytools
-Suggests: ape, vegan
+Suggests: ape, vegan, seqinr
 Author: Andrew Hipp <ahipp@mortonarb.org>
 Maintainer: Andrew Hipp <ahipp@mortonarb.org>
 Description: This project focuses on import, export, and analysis of AFLP and microsatellite data for 
@@ -12,4 +12,4 @@ Description: This project focuses on import, export, and analysis of AFLP and mi
              phylogenetic comparative methods not found in other packages.
 License: GPL
 URL: http://r-forge.r-project.org/projects/morton/
-Revision: 2
+Revision: 3
