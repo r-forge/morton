@@ -9,12 +9,36 @@
 #biocLite("Biostrings")
 
 
-consensus.pyRAD <- function(pyIn, ...) {
+con.pyRAD.multicore <- function(x, cores = 4) {
+  ## doesn't work right now
+  require(parallel)
+  cl <- makeCluster(cores, type = "SOCK")
+  out <- clusterApply(cl, x, consensus.pyRAD)
+  stopCluster(cl)
+  return(out)
+  }
+
+consensus.pyRAD <- function(pyIn, from = NA, to = NA, fastaNames = T, writeFile = 'rads.con.1_100.txt', method = 'majority', threshold = 0.001) {
 ## use seqinr to generate a consensus sequence for each pyRAD locus
+  if(class(pyIn) != "pyRAD.loci") stop("pyRAD input required, from read.pyRAD")
   require(seqinr)
+  allLoci <- unique(as.character(pyIn$locus.index))
+  allLoci <- allLoci[!allLoci == ""] ## this should probably part of read.pyRAD
+  if(!is.na(from)) allLoci <- allLoci[from:to]
+  seqs <- as.character(pyIn$seqs)
+  loc.index <- as.character(pyIn$locus.index)
+  out <- character(0)
+  for(i in allLoci) out <- c(out, paste(consensus(str2mat(seqs[loc.index == i]), method, threshold), collapse = ""))
+  if(fastaNames) allLoci <- paste(">", allLoci, sep = "")
+  names(out) <- allLoci
+  if(!is.na(writeFile)) write.table(out, writeFile, sep = "\n", quote = F, col.names = F)
+  return(out)
   }
   
 blast.pyRAD <- function(pyConsensus, ...) {}
+
+str2mat <- function(seqs) t(sapply(seqs, function(x) strsplit(x, "")[[1]])) # turns a vector of sequences into a matrix, one nucleotide per cell
+  
 
 read.pyRAD <- function(filename, reportInterval = 20000, breakLinesSeparate = TRUE, ...) {
 ## reads the all.aligned file out of pyRAD, parses into names, loci, sequences
@@ -25,7 +49,7 @@ read.pyRAD <- function(filename, reportInterval = 20000, breakLinesSeparate = TR
   dat.breakLines <- dat.consensusLines <- grep("//", dat, fixed = TRUE) # this is slow, but only ca. 1 sec for data runs of 10s of thousands
   dat.breakLines.vector <- dat[dat.breakLines] #added 2012-11-16; ignores possibility of separate breakLines
   message("Splitting data...")
-  dat.split <- strsplit(dat, " {1,100}")
+  dat.split <- strsplit(dat, " {1,100}") #uses whitespace to separate taxon names from sequences
   dat.names <- as.factor(sapply(dat.split, function(x) x[1]))
   dat.seqs <- as.factor(sapply(dat.split, function(x) x[2]))
   # dat.seqs[dat.breakLines] <- dat.breakLines.vector # shoves the consensus seqs back into the sequence vector, assuming breakLinesSeparate = F
