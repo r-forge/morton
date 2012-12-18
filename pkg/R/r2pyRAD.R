@@ -37,9 +37,6 @@ consensus.pyRAD <- function(pyIn, from = NA, to = NA, fastaNames = T, writeFile 
   
 blast.pyRAD <- function(pyConsensus, ...) {}
 
-str2mat <- function(seqs) t(sapply(seqs, function(x) strsplit(x, "")[[1]])) # turns a vector of sequences into a matrix, one nucleotide per cell
-  
-
 read.pyRAD <- function(filename, reportInterval = 20000, breakLinesSeparate = TRUE, ...) {
 ## reads the all.aligned file out of pyRAD, parses into names, loci, sequences
 ## updated with breakLinesSeparate in Oct 2012 because pyRAD switched to single-line summaries at the end of each aligned file
