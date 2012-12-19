@@ -8,7 +8,41 @@
 #source("http://bioconductor.org/biocLite.R")
 #biocLite("Biostrings")
 
+rad2phy <- function(pyDat, inds, minThreshold = 3, outfile = 'pyMat.out.phy', padding = 50) {
+## makes a phylip-style data matrix from pyRAD.summary output, limiting by individuals and a lower threshold for number of individuals per locus
+  if(class(pyDat) != "pyRAD.loci") warning("I'm expecting output from read.pyRAD")
+  if(!"radSummary" %in% names(pyDat)) pyDat$radSummary <- summary(pyDat) # calls summary if it wasn't done at read-time 
+  inds.mat <- pyDat$radSummary$inds.mat[inds, ]
+  loci <- names(which(colSums(inds.mat) >= minThreshold)) # holds the locus names to be safe
+  outfile = file(outfile, "wt")
+  open(outfile)
+  cat(paste(length(inds), sum(pyDat$radSummary$locus.lengths[loci]), "\n"), file = outfile) #header: number of individuals, number of bases
+  for(i in inds) {
+    message(paste("Writing DNA line for individual", i))
+	cat(paste(i, rep(" ", padding - nchar(i))), file = outfile)
+	for(j in loci) {
+	  if(i %in% pyDat$radSummary$tips.per.locus[[j]]) cat(pyDat$radSummary$seqs.per.locus[[j]][which(pyDat$radSummary$tips.per.locus == i)], file = outfile)
+	  else(cat(rep("N", pyDat$radSummary$locus.lengths[j])))
+	  }
+	cat("\n") #endline
+	}
+  close(outfile)
+  }
 
+rad2mat <- function(pyDat, fill.N = TRUE) {
+## shoves RAD sequence into an individuals x loci matrix
+  if(!"radSummary" %in% names(pyDat)) pyDat$radSummary <- summary(pyDat) # calls summary if it wasn't done at read-time 
+  loci <- dimnames(pyDat$radSummary$inds.mat)[[2]]
+  inds <- dimnames(pyDat$radSummary$inds.mat)[[1]]
+  out <- matrix(NA, length(inds), length(loci), dimnames = list(inds, loci))
+  for(i in loci) {
+    messge(paste('Doing locus', i))
+	out[, i] <- pyDat$radSummary$seqs.per.locus[[i]][inds]
+    if(fill.N) out[inds[!inds %in% pyDat$radSummary$tips.per.locus[[i]]], i] <- paste(rep("N", pyDat$radSummary$locus.lengths[[i]]), collapse = "")
+	}
+  return(out)
+}
+  
 con.pyRAD.multicore <- function(x, cores = 4) {
   ## doesn't work right now
   require(parallel)
@@ -37,18 +71,19 @@ consensus.pyRAD <- function(pyIn, from = NA, to = NA, fastaNames = T, writeFile 
   
 blast.pyRAD <- function(pyConsensus, ...) {}
 
-read.pyRAD <- function(filename, reportInterval = 20000, breakLinesSeparate = TRUE, ...) {
+read.pyRAD <- function(filename, reportInterval = 20000, breakLinesSeparate = TRUE, doSummary = TRUE, makeSeqMat = TRUE, ...) {
 ## reads the all.aligned file out of pyRAD, parses into names, loci, sequences
 ## updated with breakLinesSeparate in Oct 2012 because pyRAD switched to single-line summaries at the end of each aligned file
 ## updated 2012-11-16 to keep breaklines intact
+## updated 2012-12-19 to get rid of all conversions to factors... apparently no longer needed for space considerations in R
   message("Reading data...")
   dat <- readLines(filename, ...)
   dat.breakLines <- dat.consensusLines <- grep("//", dat, fixed = TRUE) # this is slow, but only ca. 1 sec for data runs of 10s of thousands
   dat.breakLines.vector <- dat[dat.breakLines] #added 2012-11-16; ignores possibility of separate breakLines
   message("Splitting data...")
   dat.split <- strsplit(dat, " {1,100}") #uses whitespace to separate taxon names from sequences
-  dat.names <- as.factor(sapply(dat.split, function(x) x[1]))
-  dat.seqs <- as.factor(sapply(dat.split, function(x) x[2]))
+  dat.names <- sapply(dat.split, function(x) x[1])
+  dat.seqs <- sapply(dat.split, function(x) x[2])
   # dat.seqs[dat.breakLines] <- dat.breakLines.vector # shoves the consensus seqs back into the sequence vector, assuming breakLinesSeparate = F
   dat.firstLocusLines <- c(1, (dat.breakLines[1:(length(dat.breakLines)-1)] + 1))
   if(breakLinesSeparate) {
@@ -80,9 +115,10 @@ read.pyRAD <- function(filename, reportInterval = 20000, breakLinesSeparate = TR
   	   ))
 	}
   }
-  dat.locus.index <- as.factor(dat.locus.index) # done only for memory considerations... slows things down in analysis unless you transform back to character
-  out = list(tips = dat.names, seqs = dat.seqs, breaks = dat.breakLines, break.vectors = dat.breakLines.vector, cons = dat.consensusLines, locus.index = dat.locus.index)
+  # dat.locus.index <- as.factor(dat.locus.index) # done only for memory considerations... slows things down in analysis unless you transform back to character
+  out = list(tips = dat.names, seqs = dat.seqs, breaks = dat.breakLines, break.vectors = dat.breakLines.vector, cons = dat.consensusLines, locus.index = dat.locus.index, file.read = filename, timestamp = date())
   class(out) <- 'pyRAD.loci'
+  if(doSummary) out$radSummary <- summary(out)
   return(out)
   }
 
@@ -90,6 +126,7 @@ summary.pyRAD.loci <- function(object, var.only = FALSE, ...) {
 # Arguments:
 #  object = a pyRAD.loci object
 #  var.only = if T, only includes variable loci; as written, the function assumes a "*" if there is 
+  message("\nDoing a pyRAD summary")
   reportInterval <- 2000 # this is just for screen reporting... only matters with really long files
   ## currently, locus.names includes a null (""), b/c the break lines have no locus name
   locus.names <- as.character(unique(object$locus.index)) # this slows things down by a factor of 2 or 3, but it seems to prevent a subscript-out-of-bounds error
@@ -108,8 +145,11 @@ summary.pyRAD.loci <- function(object, var.only = FALSE, ...) {
   start.time <- Sys.time()
   ## is there some way to vectorize the following:
   for(i in seq(num.loci)) {
-    temp <- try(tip.names %in% tips.per.locus[[locus.names[i]]])
-	if(class(temp) != "try-error") inds.mat[ , locus.names[i]] <- temp
+	temp <- try(tip.names %in% tips.per.locus[[locus.names[i]]])
+	if(class(temp) != "try-error") {
+	  inds.mat[ , locus.names[i]] <- temp
+	  names(seqs.per.locus[[i]]) <- tips.per.locus[[i]]
+	  }
 	else(message(paste("Error occurred with locus", locus.names[i])))
     if(i / reportInterval - i %/% reportInterval == 0) {
   	   message(paste('...', i, 'of', num.loci, 
@@ -118,7 +158,7 @@ summary.pyRAD.loci <- function(object, var.only = FALSE, ...) {
 	   }
 	 }
 
-  out <- list(num.loci = num.loci, tips.per.locus = tips.per.locus, break.vectors = object$break.vectors, seqs.per.locus = seqs.per.locus, num.inds.per.locus = num.inds.per.locus, variable.loci = variable.loci, inds.mat = inds.mat)
+  out <- list(num.loci = num.loci, tips.per.locus = tips.per.locus, break.vectors = object$break.vectors, seqs.per.locus = seqs.per.locus, num.inds.per.locus = num.inds.per.locus, variable.loci = variable.loci, inds.mat = inds.mat, locus.lengths = lengths.report(object, 0))
   class(out) <- 'summary.pyRAD.loci'
   out
   }
@@ -154,6 +194,7 @@ lengths.report <- function(dat, numtodo = 10, reportInterval = 2000, high.mem = 
 	   }
 
 	}
+  names(block.lengths) <- dat$locus.index[last.lines]
   return(block.lengths)
   }
 
