@@ -8,27 +8,26 @@
 #source("http://bioconductor.org/biocLite.R")
 #biocLite("Biostrings")
 
-rad2phy <- function(pyDat, inds, minThreshold = 3, outfile = 'pyMat.out.phy', padding = 50) {
-## makes a phylip-style data matrix from pyRAD.summary output, limiting by individuals and a lower threshold for number of individuals per locus
-  if(class(pyDat) != "pyRAD.loci") warning("I'm expecting output from read.pyRAD")
-  if(!"radSummary" %in% names(pyDat)) pyDat$radSummary <- summary(pyDat) # calls summary if it wasn't done at read-time 
-  inds.mat <- pyDat$radSummary$inds.mat[inds, ]
-  loci <- names(which(colSums(inds.mat) >= minThreshold)) # holds the locus names to be safe
+rad2phy <- function(pyDat, inds, loci, outfile = 'pyMat.out.phy', padding = 50) {
+## makes a phylip-style data matrix from rad.mat output, limiting by individuals and loci
+  if(class(pyDat) != "rad.mat") warning("I'm expecting output from rad.mat")
   outfile = file(outfile, "wt")
   open(outfile)
-  cat(paste(length(inds), sum(pyDat$radSummary$locus.lengths[loci]), "\n"), file = outfile) #header: number of individuals, number of bases
+  cat(paste(length(inds), sum(sapply(pyDat[inds[1], loci], nchar)), "\n"), file = outfile) #header: number of individuals, number of bases
   for(i in inds) {
     message(paste("Writing DNA line for individual", i))
-	cat(paste(i, rep(" ", padding - nchar(i))), file = outfile)
-	for(j in loci) {
-	  if(i %in% pyDat$radSummary$tips.per.locus[[j]]) cat(pyDat$radSummary$seqs.per.locus[[j]][which(pyDat$radSummary$tips.per.locus == i)], file = outfile)
-	  else(cat(rep("N", pyDat$radSummary$locus.lengths[j])))
-	  }
-	cat("\n") #endline
+	cat(i, file = outfile)
+	cat(paste(rep(" ", padding - nchar(i)), collapse = ""), file = outfile)
+	cat(paste(pyDat[i, loci], collapse = ""), file = outfile)
+	cat("\n", file = outfile) # endline
 	}
   close(outfile)
   }
 
+locus.picker <- function(pyDat, minThreshold = 3, inds = row.names(pyDat$radSummary$inds.mat)) {
+  out = names(which(colSums(pyDat$radSummary$inds.mat[inds, ]) >= minThreshold))
+  }
+  
 rad2mat <- function(pyDat, fill.N = TRUE) {
 ## shoves RAD sequence into an individuals x loci matrix
   if(!"radSummary" %in% names(pyDat)) pyDat$radSummary <- summary(pyDat) # calls summary if it wasn't done at read-time 
@@ -36,10 +35,11 @@ rad2mat <- function(pyDat, fill.N = TRUE) {
   inds <- dimnames(pyDat$radSummary$inds.mat)[[1]]
   out <- matrix(NA, length(inds), length(loci), dimnames = list(inds, loci))
   for(i in loci) {
-    messge(paste('Doing locus', i))
+    message(paste('Doing locus', i))
 	out[, i] <- pyDat$radSummary$seqs.per.locus[[i]][inds]
     if(fill.N) out[inds[!inds %in% pyDat$radSummary$tips.per.locus[[i]]], i] <- paste(rep("N", pyDat$radSummary$locus.lengths[[i]]), collapse = "")
 	}
+  class(out) <- 'rad.mat'
   return(out)
 }
   
