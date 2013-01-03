@@ -64,7 +64,10 @@ consensus.pyRAD <- function(pyIn, from = NA, to = NA, fastaNames = T, writeFile 
   seqs <- as.character(pyIn$seqs)
   loc.index <- as.character(pyIn$locus.index)
   out <- character(0)
-  for (i in allLoci) out <- c(out, consensusString(DNAStringSet(seqs[loc.index == i]), ...))
+  for (i in allLoci) {
+    message(i) #only for debugging
+	out <- c(out, consensusString(DNAStringSet(gsub("-", "N", seqs[loc.index == i])), ...))
+	}
   # for(i in allLoci) out <- c(out, paste(consensus(str2mat(seqs[loc.index == i]), method, threshold), collapse = ""))
   if(fastaNames) allLoci <- paste(">", allLoci, sep = "")
   names(out) <- allLoci
