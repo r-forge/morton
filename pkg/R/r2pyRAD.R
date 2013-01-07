@@ -174,13 +174,15 @@ overlap.report <- function(dat, repPattern = "2.") {
   if(class(dat) == 'summary.pyRAD.loci') dat <- dat$inds.mat
   reps <- grep(repPattern, row.names(dat), fixed = TRUE, value = TRUE)
   orig <- sapply(reps, function(x) strsplit(x, repPattern, fixed = TRUE)[[1]][2])
-  out <- matrix(NA, nrow = length(orig), ncol = 3, dimnames = list(orig, c("Original", "Replicate", "Both")))
+  out <- matrix(NA, nrow = length(orig), ncol = 5, dimnames = list(orig, c("Original", "Replicate", "Intersection", "Union", "Not intersection")))
   for(i in 1:length(orig)) {
     message(paste("Doing names", orig[i]))
 	out[orig[i], "Original"] <- sum(dat[orig[i],])
 	out[orig[i], "Replicate"] <- sum(dat[reps[i],])
-	out[orig[i], "Both"] <- sum(colSums(dat[c(orig[i], reps[i]), ]) == 2)
+	out[orig[i], "Intersection"] <- sum(colSums(dat[c(orig[i], reps[i]), ]) == 2, na.rm = T)
+	out[orig[i], "Union"] <- sum(colSums(dat[c(orig[i], reps[i]), ]) %in% 1:2, na.rm = T)
 	}
+  out[, "Not intersection"] <- out[, "Union"] - out[, "Intersection"]
   return(out)
   }
 
