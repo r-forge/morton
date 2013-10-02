@@ -9,4 +9,3 @@ gls.r.squared <- function(x) {
   r.squared= 1-(t(e) %*% solve(V) %*% e) / (t(Y-a) %*% solve(V) %*% (Y-a))
   return(r.squared[1,1])
   }
-  
