@@ -14,20 +14,22 @@ mantelMultiple(Y, X, permutations = 999, strata)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{Y}{
-%%     ~~Describe \code{Y} here~~
+   This should be a dist object or a matrix... I'm not sure, so try both ways. This is your response variable.
 }
   \item{X}{
-%%     ~~Describe \code{X} here~~
+   This is a list of dist objects or matrices... again, try both ways. I'll fix this in the real documentation. Each item in this list is a predictor of Y.
 }
   \item{permutations}{
-%%     ~~Describe \code{permutations} here~~
+   The number of permutations of Y that you want to assess the significance of partial correlations.
 }
   \item{strata}{
-%%     ~~Describe \code{strata} here~~
+   Not implemented; a holdover from vegan.
 }
 }
 \details{
-%%  ~~ If necessary, more details than the description above ~~
+   It's imperative that the matrices you pass in are ordered in the same way (i.e., samples are in the same order along the rows and the columns). The safest way to do this is to set a vector of individuals that you want to sample and subset every matrix by x[inds, inds], where x is a matrix and inds is a vector of individuals you want to sample.
+   
+   Watch out! NAs are not supported and may behave in unpredictable ways.
 }
 \value{
 %%  ~Describe the value returned
