@@ -1,4 +1,4 @@
-haversine <- function(x, ...) UseMethod('haversine')
+haversine <- function(x, lat.long.labels = c('Lat', 'Long'), ...) UseMethod('haversine')
 
 haversine.default <-
 ## Arguments:
@@ -26,7 +26,7 @@ haversine.matrix <- function(x, ...) {
   out <- matrix(NA, nrow = dim(x)[1], ncol = dim(x)[1])
   for(i in 1:dim(x)[1]) {
     for(j in 1:i) {
-	  out[i, j] <- haversine.default(lat1 = x[i, 'latitude'], lat2 = x[j, 'latitude'], long1 = x[i, 'longitude'], long2 = x[j, 'longitude'])
+	  out[i, j] <- haversine.default(lat1 = x[i, lat.long.labels[1]], lat2 = x[j, lat.long.labels[1]], long1 = x[i, lat.long.labels[2]], long2 = x[j, lat.long.labels[2]])
 	  }}
   out <- as.dist(out, ...)
   return(out)
