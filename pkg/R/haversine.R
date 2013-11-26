@@ -1,4 +1,4 @@
-haversine <- function(x, lat.long.labels = c('Lat', 'Long'), ...) UseMethod('haversine')
+haversine <- function(x, lat.long.labels = c('Lat', 'Long'), name.column = NA, ...) UseMethod('haversine')
 
 haversine.default <-
 ## Arguments:
@@ -20,14 +20,17 @@ function(lat1, long1, lat2, long2, r = 6372.795) {
   d = r * c
   return(d) }
 
-haversine.data.frame <- function(x, lat.long.labels = c('Lat', 'Long'), ...) haversine(as.matrix(x))
+haversine.data.frame <- function(x, lat.long.labels = c('Lat', 'Long'), name.column = NA, ...) haversine(as.matrix(x), lat.long.labels, name.column, ...)
   
-haversine.matrix <- function(x, lat.long.labels = c('Lat', 'Long'), ...) {
+haversine.matrix <- function(x, lat.long.labels = c('Lat', 'Long'), name.column = NA, ...) {
+  nameVector <- x[, name.column]
+  x <- apply(x[, lat.long.labels], 1:2, as.numeric)
   out <- matrix(NA, nrow = dim(x)[1], ncol = dim(x)[1])
   for(i in 1:dim(x)[1]) {
     for(j in 1:i) {
-	  out[i, j] <- haversine.default(lat1 = x[i, lat.long.labels[1]], lat2 = x[j, lat.long.labels[1]], long1 = x[i, lat.long.labels[2]], long2 = x[j, lat.long.labels[2]])
+	  out[i, j] <- haversine.default(lat1 = x[i, 1], long1 = x[i, 2], lat2 = x[j, 1], long2 = x[j, 2])
 	  }}
+  dimnames(out) <- list(nameVector, nameVector)
   out <- as.dist(out, ...)
   return(out)
   }
