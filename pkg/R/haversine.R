@@ -23,7 +23,8 @@ function(lat1, long1, lat2, long2, r = 6372.795) {
 haversine.data.frame <- function(x, lat.long.labels = c('Lat', 'Long'), name.column = NA, ...) haversine(as.matrix(x), lat.long.labels, name.column, ...)
   
 haversine.matrix <- function(x, lat.long.labels = c('Lat', 'Long'), name.column = NA, ...) {
-  nameVector <- x[, name.column]
+  if(is.na(name.column[1])) nameVector <- row.names(x)
+  else nameVector <- x[, name.column]
   x <- apply(x[, lat.long.labels], 1:2, as.numeric)
   out <- matrix(NA, nrow = dim(x)[1], ncol = dim(x)[1])
   for(i in 1:dim(x)[1]) {
