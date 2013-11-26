@@ -1,4 +1,6 @@
-haversine <-
+haversine <- function(x, ...) UseMethod('haversine')
+
+haversine.default <-
 ## Arguments:
 ##  lat1 and long1: latitude and longitude for site one, in decimal format (e.g., N40deg 30', W 90deg 45' = 40.500, -90.750)
 ##  lat2 and long2: latitude and longitude for site two
@@ -18,3 +20,8 @@ function(lat1, long1, lat2, long2, r = 6372.795) {
   d = r * c
   return(d) }
 
+haversine.data.frame <- function(x, ...) haversine(as.matrix(x))
+  
+haversine.matrix <- function(x, ...) {
+  for(i in 1:dim(x)[1])
+    for(j in 1:i)
