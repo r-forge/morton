@@ -23,5 +23,11 @@ function(lat1, long1, lat2, long2, r = 6372.795) {
 haversine.data.frame <- function(x, ...) haversine(as.matrix(x))
   
 haversine.matrix <- function(x, ...) {
-  for(i in 1:dim(x)[1])
-    for(j in 1:i)
+  out <- matrix(NA, nrow = dim(x)[1], ncol = dim(x)[1])
+  for(i in 1:dim(x)[1]) {
+    for(j in 1:i) {
+	  out[i, j] <- haversine.default(lat1 = x[i, 'latitude'], lat2 = x[j, 'latitude'], long1 = x[i, 'longitude'], long2 = x[j, 'longitude'])
+	  }}
+  out <- as.dist(out, ...)
+  return(out)
+  }
