@@ -20,9 +20,9 @@ function(lat1, long1, lat2, long2, r = 6372.795) {
   d = r * c
   return(d) }
 
-haversine.data.frame <- function(x, ...) haversine(as.matrix(x))
+haversine.data.frame <- function(x, lat.long.labels = c('Lat', 'Long'), ...) haversine(as.matrix(x))
   
-haversine.matrix <- function(x, ...) {
+haversine.matrix <- function(x, lat.long.labels = c('Lat', 'Long'), ...) {
   out <- matrix(NA, nrow = dim(x)[1], ncol = dim(x)[1])
   for(i in 1:dim(x)[1]) {
     for(j in 1:i) {
