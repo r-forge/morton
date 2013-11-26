@@ -1,9 +1,7 @@
-## make a tree from the trelease hierarchy, p. 20
+## make a tree from a taxonomic hierarchy
 ## ahipp@mortonarb.org, 2013-11-25
 
-trelease.table <- read.delim('trelease.taxonomy.2013-11-25.trial', as.is = T)
-
-tree.from.taxonomy <- function(taxonomy = trelease.table) {
+tax2tree <- function(taxonomy) {
   nEdge = dim(taxonomy)[1]
   ntips <- sum(taxonomy$tip)
   tr <- list(edge = matrix(NA, nrow = nEdge, ncol = 2),
